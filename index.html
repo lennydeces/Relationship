@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US States Groupings Visualization</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network@latest/dist/vis-network.min.js"></script>
+    <style>
+        body { margin: 0; }
+        #network { width: 100vw; height: 100vh; }
+        .popup {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 300px;
+            border-radius: 5px;
+        }
+        .popup .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="network"></div>
+    <script type="text/javascript">
+        // Define nodes with initial popupContent (connections added dynamically)
+        var nodes = [
+            // Higher-level categories
+            { id: 'Political', label: 'Political', shape: 'circle', color: '#FF6347', popupContent: 'Political, includes Liberal and Conservative regions.<br><a href="https://en.wikipedia.org/wiki/Red_states_and_blue_states" target="_blank">Learn more</a>' },
+            // Existing categories
+            { id: 'New England', label: 'New England', shape: 'box', color: '#97C2FC', popupContent: 'New England, known for its colonial history and fall foliage.<br><a href="https://en.wikipedia.org/wiki/New_England" target="_blank">Learn more</a>' },
+            { id: 'Mid-Atlantic', label: 'Mid-Atlantic', shape: 'box', color: '#97C2FC', popupContent: 'Mid-Atlantic, home to major urban and historical centers.<br><a href="https://en.wikipedia.org/wiki/Mid-Atlantic_(United_States)" target="_blank">Learn more</a>' },
+            { id: 'Southeast', label: 'Southeast', shape: 'box', color: '#97C2FC', popupContent: 'Southeast, known for its warm climate and cultural heritage.<br><a href="https://en.wikipedia.org/wiki/Southeastern_United_States" target="_blank">Learn more</a>' },
+            { id: 'Midwest', label: 'Midwest', shape: 'box', color: '#97C2FC', popupContent: 'Midwest, the heartland with vast farmlands.<br><a href="https://en.wikipedia.org/wiki/Midwestern_United_States" target="_blank">Learn more</a>' },
+            { id: 'Southwest', label: 'Southwest', shape: 'box', color: '#97C2FC', popupContent: 'Southwest, characterized by deserts and vibrant culture.<br><a href="https://en.wikipedia.org/wiki/Southwestern_United_States" target="_blank">Learn more</a>' },
+            { id: 'Rocky Mountain', label: 'Rocky Mountain', shape: 'box', color: '#97C2FC', popupContent: 'Mountain, known for its rugged peaks and outdoor recreation.<br><a href="https://en.wikipedia.org/wiki/Rocky_Mountain_Region" target="_blank">Learn more</a>' },
+            { id: 'Pacific', label: 'Pacific', shape: 'box', color: '#97C2FC', popupContent: 'Pacific, coastal states with diverse ecosystems.<br><a href="https://en.wikipedia.org/wiki/Pacific_States" target="_blank">Learn more</a>' },
+            { id: 'Desert', label: 'Desert', shape: 'box', color: '#FFA500', popupContent: 'Desert, arid regions with unique landscapes.<br><a href="https://en.wikipedia.org/wiki/Deserts_of_the_United_States" target="_blank">Learn more</a>' },
+            { id: 'Greenery', label: 'Greenery', shape: 'box', color: '#FFA500', popupContent: 'Greenery, states with lush forests and natural beauty.<br><a href="https://en.wikipedia.org/wiki/Forests_of_the_United_States" target="_blank">Learn more</a>' },
+            { id: 'Stockyard', label: 'Stockyard', shape: 'box', color: '#FFA500', popupContent: 'Stockyard, key livestock and agricultural states.<br><a href="https://en.wikipedia.org/wiki/Agriculture_in_the_United_States" target="_blank">Learn more</a>' },
+            { id: 'Glacier', label: 'Glacier', shape: 'box', color: '#FFA500', popupContent: 'Glacier, states with glacial landscapes and mountains.<br><a href="https://en.wikipedia.org/wiki/Glaciers_of_the_United_States" target="_blank">Learn more</a>' },
+            { id: 'Rust', label: 'Rust', shape: 'box', color: '#FFA500', popupContent: 'Rust Belt, industrial states with manufacturing history.<br><a href="https://en.wikipedia.org/wiki/Rust_Belt" target="_blank">Learn more</a>' },
+            { id: 'Sun', label: 'Sun', shape: 'box', color: '#FFA500', popupContent: 'Sun Belt, warm states with growing populations.<br><a href="https://en.wikipedia.org/wiki/Sun_Belt" target="_blank">Learn more</a>' },
+            { id: 'Liberal', label: 'Liberal', shape: 'box', color: '#FFA500', popupContent: 'Liberal, states with progressive political leanings.<br><a href="https://en.wikipedia.org/wiki/Red_states_and_blue_states" target="_blank">Learn more</a>' },
+            { id: 'Conservative', label: 'Conservative', shape: 'box', color: '#FFA500', popupContent: 'Conservative, states with conservative political leanings.<br><a href="https://en.wikipedia.org/wiki/Red_states_and_blue_states" target="_blank">Learn more</a>' },
+            // States
+            { id: 'Maine', label: 'Maine', shape: 'ellipse', color: '#6EFA70', popupContent: 'Maine, known for lobster and lighthouses.<br><a href="https://en.wikipedia.org/wiki/Maine" target="_blank">Learn more</a>' },
+            { id: 'New Hampshire', label: 'New Hampshire', shape: 'ellipse', color: '#6EFA70', popupContent: 'New Hampshire, home to White Mountains.<br><a href="https://en.wikipedia.org/wiki/New_Hampshire" target="_blank">Learn more</a>' },
+            { id: 'Vermont', label: 'Vermont', shape: 'ellipse', color: '#6EFA70', popupContent: 'Vermont, famous for maple syrup.<br><a href="https://en.wikipedia.org/wiki/Vermont" target="_blank">Learn more</a>' },
+            { id: 'Massachusetts', label: 'Massachusetts', shape: 'ellipse', color: '#6EFA70', popupContent: 'Massachusetts, hub of American history.<br><a href="https://en.wikipedia.org/wiki/Massachusetts" target="_blank">Learn more</a>' },
+            { id: 'Rhode Island', label: 'Rhode Island', shape: 'ellipse', color: '#6EFA70', popupContent: 'Rhode Island, the Ocean State.<br><a href="https://en.wikipedia.org/wiki/Rhode_Island" target="_blank">Learn more</a>' },
+            { id: 'Connecticut', label: 'Connecticut', shape: 'ellipse', color: '#6EFA70', popupContent: 'Connecticut, known for its maritime heritage.<br><a href="https://en.wikipedia.org/wiki/Connecticut" target="_blank">Learn more</a>' },
+            { id: 'New York', label: 'New York', shape: 'ellipse', color: '#6EFA70', popupContent: 'New York, home to NYC and upstate beauty.<br><a href="https://en.wikipedia.org/wiki/New_York_(state)" target="_blank">Learn more</a>' },
+            { id: 'New Jersey', label: 'New Jersey', shape: 'ellipse', color: '#6EFA70', popupContent: 'New Jersey, the Garden State.<br><a href="https://en.wikipedia.org/wiki/New_Jersey" target="_blank">Learn more</a>' },
+            { id: 'Pennsylvania', label: 'Pennsylvania', shape: 'ellipse', color: '#6EFA70', popupContent: 'Pennsylvania, rich in historical significance.<br><a href="https://en.wikipedia.org/wiki/Pennsylvania" target="_blank">Learn more</a>' },
+            { id: 'Delaware', label: 'Delaware', shape: 'ellipse', color: '#6EFA70', popupContent: 'Delaware, the First State.<br><a href="https://en.wikipedia.org/wiki/Delaware" target="_blank">Learn more</a>' },
+            { id: 'Maryland', label: 'Maryland', shape: 'ellipse', color: '#6EFA70', popupContent: 'Maryland, known for Chesapeake Bay.<br><a href="https://en.wikipedia.org/wiki/Maryland" target="_blank">Learn more</a>' },
+            { id: 'Washington, D.C.', label: 'Washington, D.C.', shape: 'ellipse', color: '#6EFA70', popupContent: 'Washington, D.C., the nation’s capital.<br><a href="https://en.wikipedia.org/wiki/Washington,_D.C." target="_blank">Learn more</a>' },
+            { id: 'Virginia', label: 'Virginia', shape: 'ellipse', color: '#6EFA70', popupContent: 'Virginia, steeped in colonial history.<br><a href="https://en.wikipedia.org/wiki/Virginia" target="_blank">Learn more</a>' },
+            { id: 'West Virginia', label: 'West Virginia', shape: 'ellipse', color: '#6EFA70', popupContent: 'West Virginia, known for its mountains.<br><a href="https://en.wikipedia.org/wiki/West_Virginia" target="_blank">Learn more</a>' },
+            { id: 'Kentucky', label: 'Kentucky', shape: 'ellipse', color: '#6EFA70', popupContent: 'Kentucky, famous for horse racing.<br><a href="https://en.wikipedia.org/wiki/Kentucky" target="_blank">Learn more</a>' },
+            { id: 'North Carolina', label: 'North Carolina', shape: 'ellipse', color: '#6EFA70', popupContent: 'North Carolina, from mountains to coast.<br><a href="https://en.wikipedia.org/wiki/North_Carolina" target="_blank">Learn more</a>' },
+            { id: 'South Carolina', label: 'South Carolina', shape: 'ellipse', color: '#6EFA70', popupContent: 'South Carolina, known for its beaches.<br><a href="https://en.wikipedia.org/wiki/South_Carolina" target="_blank">Learn more</a>' },
+            { id: 'Georgia', label: 'Georgia', shape: 'ellipse', color: '#6EFA70', popupContent: 'Georgia, the Peach State.<br><a href="https://en.wikipedia.org/wiki/Georgia_(U.S._state)" target="_blank">Learn more</a>' },
+            { id: 'Florida', label: 'Florida', shape: 'ellipse', color: '#6EFA70', popupContent: 'Florida, known for sunshine and beaches.<br><a href="https://en.wikipedia.org/wiki/Florida" target="_blank">Learn more</a>' },
+            { id: 'Alabama', label: 'Alabama', shape: 'ellipse', color: '#6EFA70', popupContent: 'Alabama, heart of the Deep South.<br><a href="https://en.wikipedia.org/wiki/Alabama" target="_blank">Learn more</a>' },
+            { id: 'Mississippi', label: 'Mississippi', shape: 'ellipse', color: '#6EFA70', popupContent: 'Mississippi, known for its river and music.<br><a href="https://en.wikipedia.org/wiki/Mississippi" target="_blank">Learn more</a>' },
+            { id: 'Tennessee', label: 'Tennessee', shape: 'ellipse', color: '#6EFA70', popupContent: 'Tennessee, home of country music.<br><a href="https://en.wikipedia.org/wiki/Tennessee" target="_blank">Learn more</a>' },
+            { id: 'Arkansas', label: 'Arkansas', shape: 'ellipse', color: '#6EFA70', popupContent: 'Arkansas, known for natural beauty.<br><a href="https://en.wikipedia.org/wiki/Arkansas" target="_blank">Learn more</a>' },
+            { id: 'Louisiana', label: 'Louisiana', shape: 'ellipse', color: '#6EFA70', popupContent: 'Louisiana, famous for Cajun culture.<br><a href="https://en.wikipedia.org/wiki/Louisiana" target="_blank">Learn more</a>' },
+            { id: 'Ohio', label: 'Ohio', shape: 'ellipse', color: '#6EFA70', popupContent: 'Ohio, key industrial state.<br><a href="https://en.wikipedia.org/wiki/Ohio" target="_blank">Learn more</a>' },
+            { id: 'Michigan', label: 'Michigan', shape: 'ellipse', color: '#6EFA70', popupContent: 'Michigan, surrounded by Great Lakes.<br><a href="https://en.wikipedia.org/wiki/Michigan" target="_blank">Learn more</a>' },
+            { id: 'Indiana', label: 'Indiana', shape: 'ellipse', color: '#6EFA70', popupContent: 'Indiana, known for Indy 500.<br><a href="https://en.wikipedia.org/wiki/Indiana" target="_blank">Learn more</a>' },
+            { id: 'Illinois', label: 'Illinois', shape: 'ellipse', color: '#6EFA70', popupContent: 'Illinois, home to Chicago.<br><a href="https://en.wikipedia.org/wiki/Illinois" target="_blank">Learn more</a>' },
+            { id: 'Wisconsin', label: 'Wisconsin', shape: 'ellipse', color: '#6EFA70', popupContent: 'Wisconsin, famous for cheese.<br><a href="https://en.wikipedia.org/wiki/Wisconsin" target="_blank">Learn more</a>' },
+            { id: 'Minnesota', label: 'Minnesota', shape: 'ellipse', color: '#6EFA70', popupContent: 'Minnesota, land of 10,000 lakes.<br><a href="https://en.wikipedia.org/wiki/Minnesota" target="_blank">Learn more</a>' },
+            { id: 'Iowa', label: 'Iowa', shape: 'ellipse', color: '#6EFA70', popupContent: 'Iowa, known for its cornfields.<br><a href="https://en.wikipedia.org/wiki/Iowa" target="_blank">Learn more</a>' },
+            { id: 'Missouri', label: 'Missouri', shape: 'ellipse', color: '#6EFA70', popupContent: 'Missouri, the Show-Me State.<br><a href="https://en.wikipedia.org/wiki/Missouri" target="_blank">Learn more</a>' },
+            { id: 'North Dakota', label: 'North Dakota', shape: 'ellipse', color: '#6EFA70', popupContent: 'North Dakota, known for prairies.<br><a href="https://en.wikipedia.org/wiki/North_Dakota" target="_blank">Learn more</a>' },
+            { id: 'South Dakota', label: 'South Dakota', shape: 'ellipse', color: '#6EFA70', popupContent: 'South Dakota, home to Mount Rushmore.<br><a href="https://en.wikipedia.org/wiki/South_Dakota" target="_blank">Learn more</a>' },
+            { id: 'Nebraska', label: 'Nebraska', shape: 'ellipse', color: '#6EFA70', popupContent: 'Nebraska, known for its plains.<br><a href="https://en.wikipedia.org/wiki/Nebraska" target="_blank">Learn more</a>' },
+            { id: 'Kansas', label: 'Kansas', shape: 'ellipse', color: '#6EFA70', popupContent: 'Kansas, the Sunflower State.<br><a href="https://en.wikipedia.org/wiki/Kansas" target="_blank">Learn more</a>' },
+            { id: 'Texas', label: 'Texas', shape: 'ellipse', color: '#6EFA70', popupContent: 'Texas, known for its size and culture.<br><a href="https://en.wikipedia.org/wiki/Texas" target="_blank">Learn more</a>' },
+            { id: 'Oklahoma', label: 'Oklahoma', shape: 'ellipse', color: '#6EFA70', popupContent: 'Oklahoma, rich in Native American history.<br><a href="https://en.wikipedia.org/wiki/Oklahoma" target="_blank">Learn more</a>' },
+            { id: 'New Mexico', label: 'New Mexico', shape: 'ellipse', color: '#6EFA70', popupContent: 'New Mexico, land of enchantment.<br><a href="https://en.wikipedia.org/wiki/New_Mexico" target="_blank">Learn more</a>' },
+            { id: 'Arizona', label: 'Arizona', shape: 'ellipse', color: '#6EFA70', popupContent: 'Arizona, home to the Grand Canyon.<br><a href="https://en.wikipedia.org/wiki/Arizona" target="_blank">Learn more</a>' },
+            { id: 'Montana', label: 'Montana', shape: 'ellipse', color: '#6EFA70', popupContent: 'Montana, known for big sky country.<br><a href="https://en.wikipedia.org/wiki/Montana" target="_blank">Learn more</a>' },
+            { id: 'Idaho', label: 'Idaho', shape: 'ellipse', color: '#6EFA70', popupContent: 'Idaho, famous for potatoes.<br><a href="https://en.wikipedia.org/wiki/Idaho" target="_blank">Learn more</a>' },
+            { id: 'Wyoming', label: 'Wyoming', shape: 'ellipse', color: '#6EFA70', popupContent: 'Wyoming, home to Yellowstone.<br><a href="https://en.wikipedia.org/wiki/Wyoming" target="_blank">Learn more</a>' },
+            { id: 'Nevada', label: 'Nevada', shape: 'ellipse', color: '#6EFA70', popupContent: 'Nevada, known for Las Vegas.<br><a href="https://en.wikipedia.org/wiki/Nevada" target="_blank">Learn more</a>' },
+            { id: 'Utah', label: 'Utah', shape: 'ellipse', color: '#6EFA70', popupContent: 'Utah, famous for national parks.<br><a href="https://en.wikipedia.org/wiki/Utah" target="_blank">Learn more</a>' },
+            { id: 'Colorado', label: 'Colorado', shape: 'ellipse', color: '#6EFA70', popupContent: 'Colorado, known for the Rockies.<br><a href="https://en.wikipedia.org/wiki/Colorado" target="_blank">Learn more</a>' },
+            { id: 'Washington', label: 'Washington', shape: 'ellipse', color: '#6EFA70', popupContent: 'Washington, home to Seattle.<br><a href="https://en.wikipedia.org/wiki/Washington_(state)" target="_blank">Learn more</a>' },
+            { id: 'Oregon', label: 'Oregon', shape: 'ellipse', color: '#6EFA70', popupContent: 'Oregon, known for its forests.<br><a href="https://en.wikipedia.org/wiki/Oregon" target="_blank">Learn more</a>' },
+            { id: 'California', label: 'California', shape: 'ellipse', color: '#6EFA70', popupContent: 'California, the Golden State.<br><a href="https://en.wikipedia.org/wiki/California" target="_blank">Learn more</a>' },
+            { id: 'Alaska', label: 'Alaska', shape: 'ellipse', color: '#6EFA70', popupContent: 'Alaska, known for its wilderness.<br><a href="https://en.wikipedia.org/wiki/Alaska" target="_blank">Learn more</a>' },
+            { id: 'Hawaii', label: 'Hawaii', shape: 'ellipse', color: '#6EFA70', popupContent: 'Hawaii, famous for volcanic islands.<br><a href="https://en.wikipedia.org/wiki/Hawaii" target="_blank">Learn more</a>' }
+        ];
+
+        // Define edges with direction and cost for a subset
+        var edges = [
+            // Higher-level category edges
+            { from: 'Political', to: 'Liberal' },
+            { from: 'Political', to: 'Conservative' },
+            { from: 'Political', to: 'Political', arrows: { to: { enabled: true } }, value: 1, label: 'Loop' },
+            
+            // New England
+            { from: 'New England', to: 'Maine' },
+            { from: 'New England', to: 'New Hampshire' },
+            { from: 'New England', to: 'Vermont' },
+            { from: 'New England', to: 'Massachusetts', arrows: { to: { enabled: true } }, value: 3, label: 'State' },
+            { from: 'New England', to: 'Rhode Island' },
+            { from: 'New England', to: 'Connecticut' },
+            
+            // Mid-Atlantic
+            { from: 'Mid-Atlantic', to: 'New York', arrows: { to: { enabled: true } }, value: 3, label: 'State' },
+            { from: 'Mid-Atlantic', to: 'New Jersey' },
+            { from: 'Mid-Atlantic', to: 'Pennsylvania' },
+            { from: 'Mid-Atlantic', to: 'Delaware' },
+            { from: 'Mid-Atlantic', to: 'Maryland' },
+            { from: 'Mid-Atlantic', to: 'Washington, D.C.' },
+            
+            // Southeast
+            { from: 'Southeast', to: 'Virginia' },
+            { from: 'Southeast', to: 'West Virginia' },
+            { from: 'Southeast', to: 'Kentucky' },
+            { from: 'Southeast', to: 'North Carolina' },
+            { from: 'Southeast', to: 'South Carolina' },
+            { from: 'Southeast', to: 'Georgia', arrows: { to: { enabled: true } }, value: 3, label: 'State' },
+            { from: 'Southeast', to: 'Florida' },
+            { from: 'Southeast', to: 'Alabama' },
+            { from: 'Southeast', to: 'Mississippi' },
+            { from: 'Southeast', to: 'Tennessee' },
+            { from: 'Southeast', to: 'Arkansas' },
+            { from: 'Southeast', to: 'Louisiana' },
+            
+            // Midwest
+            { from: 'Midwest', to: 'Ohio' },
+            { from: 'Midwest', to: 'Michigan' },
+            { from: 'Midwest', to: 'Indiana' },
+            { from: 'Midwest', to: 'Illinois', arrows: { to: { enabled: true } }, value: 3, label: 'State' },
+            { from: 'Midwest', to: 'Wisconsin' },
+            { from: 'Midwest', to: 'Minnesota' },
+            { from: 'Midwest', to: 'Iowa' },
+            { from: 'Midwest', to: 'Missouri' },
+            { from: 'Midwest', to: 'North Dakota' },
+            { from: 'Midwest', to: 'South Dakota' },
+            { from: 'Midwest', to: 'Nebraska' },
+            { from: 'Midwest', to: 'Kansas' },
+            
+            // Southwest
+            { from: 'Southwest', to: 'Texas', arrows: { to: { enabled: true } }, value: 2, label: 'State' },
+            { from: 'Texas', to: 'Southwest', arrows: { to: { enabled: true } }, value: 2, label: 'Region' },
+            { from: 'Southwest', to: 'Oklahoma' },
+            { from: 'Southwest', to: 'New Mexico' },
+            { from: 'Southwest', to: 'Arizona' },
+            
+            // Rocky Mountain
+            { from: 'Rocky Mountain', to: 'Montana' },
+            { from: 'Rocky Mountain', to: 'Idaho' },
+            { from: 'Rocky Mountain', to: 'Wyoming' },
+            { from: 'Rocky Mountain', to: 'Nevada' },
+            { from: 'Rocky Mountain', to: 'Utah' },
+            { from: 'Rocky Mountain', to: 'Colorado', arrows: { to: { enabled: true } }, value: 2, label: 'State' },
+            { from: 'Colorado', to: 'Rocky Mountain', arrows: { to: { enabled: true } }, value: 2, label: 'Region' },
+            
+            // Pacific
+            { from: 'Pacific', to: 'Washington' },
+            { from: 'Pacific', to: 'Oregon' },
+            { from: 'Pacific', to: 'California', arrows: { to: { enabled: true } }, value: 2, label: 'State' },
+            { from: 'California', to: 'Pacific', arrows: { to: { enabled: true } }, value: 2, label: 'Region' },
+            { from: 'Pacific', to: 'Alaska' },
+            { from: 'Pacific', to: 'Hawaii' },
+            
+            // Rust
+            { from: 'Rust', to: 'New York' },
+            { from: 'Rust', to: 'Pennsylvania' },
+            { from: 'Rust', to: 'West Virginia' },
+            { from: 'Rust', to: 'Ohio', arrows: { to: { enabled: true } }, value: 3, label: 'State' },
+            { from: 'Rust', to: 'Michigan' },
+            { from: 'Rust', to: 'Indiana' },
+            { from: 'Rust', to: 'Illinois' },
+            { from: 'Rust', to: 'Wisconsin' },
+            
+            // Sun
+            { from: 'Sun', to: 'North Carolina' },
+            { from: 'Sun', to: 'South Carolina' },
+            { from: 'Sun', to: 'Georgia' },
+            { from: 'Sun', to: 'Florida', arrows: { to: { enabled: true } }, value: 2, label: 'State' },
+            { from: 'Florida', to: 'Sun', arrows: { to: { enabled: true } }, value: 2, label: 'Region' },
+            { from: 'Sun', to: 'Tennessee' },
+            { from: 'Sun', to: 'Alabama' },
+            { from: 'Sun', to: 'Mississippi' },
+            { from: 'Sun', to: 'Arkansas' },
+            { from: 'Sun', to: 'Louisiana' },
+            { from: 'Sun', to: 'Oklahoma' },
+            { from: 'Sun', to: 'Texas' },
+            { from: 'Sun', to: 'New Mexico' },
+            { from: 'Sun', to: 'Arizona' },
+            { from: 'Sun', to: 'Nevada' },
+            { from: 'Sun', to: 'California' },
+            
+            // Desert
+            { from: 'Desert', to: 'New Mexico' },
+            { from: 'Desert', to: 'Arizona' },
+            { from: 'Desert', to: 'Nevada' },
+            { from: 'Desert', to: 'California' },
+            
+            // Greenery
+            { from: 'Greenery', to: 'New Hampshire' },
+            { from: 'Greenery', to: 'Vermont' },
+            { from: 'Greenery', to: 'West Virginia' },
+            { from: 'Greenery', to: 'North Carolina' },
+            { from: 'Greenery', to: 'Illinois' },
+            { from: 'Greenery', to: 'Nebraska' },
+            { from: 'Greenery', to: 'Idaho' },
+            { from: 'Greenery', to: 'Oregon' },
+            
+            // Stockyard
+            { from: 'Stockyard', to: 'Iowa' },
+            { from: 'Stockyard', to: 'Nebraska' },
+            { from: 'Stockyard', to: 'Kansas' },
+            { from: 'Stockyard', to: 'Oklahoma' },
+            { from: 'Stockyard', to: 'Texas' },
+            
+            // Glacier
+            { from: 'Glacier', to: 'Colorado' },
+            { from: 'Glacier', to: 'Montana' },
+            { from: 'Glacier', to: 'Washington' },
+            { from: 'Glacier', to: 'Oregon' },
+            { from: 'Glacier', to: 'Alaska' },
+            
+            // Liberal
+            { from: 'Liberal', to: 'Maine' },
+            { from: 'Liberal', to: 'New Hampshire' },
+            { from: 'Liberal', to: 'Vermont' },
+            { from: 'Liberal', to: 'Massachusetts' },
+            { from: 'Liberal', to: 'Rhode Island' },
+            { from: 'Liberal', to: 'Connecticut' },
+            { from: 'Liberal', to: 'New York' },
+            { from: 'Liberal', to: 'New Jersey' },
+            { from: 'Liberal', to: 'Delaware' },
+            { from: 'Liberal', to: 'Maryland' },
+            { from: 'Liberal', to: 'Washington, D.C.' },
+            { from: 'Liberal', to: 'Virginia' },
+            { from: 'Liberal', to: 'Illinois' },
+            { from: 'Liberal', to: 'Minnesota' },
+            { from: 'Liberal', to: 'Colorado' },
+            { from: 'Liberal', to: 'New Mexico' },
+            { from: 'Liberal', to: 'Washington' },
+            { from: 'Liberal', to: 'Oregon' },
+            { from: 'Liberal', to: 'California' },
+            { from: 'Liberal', to: 'Hawaii' },
+            
+            // Conservative
+            { from: 'Conservative', to: 'West Virginia' },
+            { from: 'Conservative', to: 'North Carolina' },
+            { from: 'Conservative', to: 'South Carolina' },
+            { from: 'Conservative', to: 'Indiana' },
+            { from: 'Conservative', to: 'Kentucky' },
+            { from: 'Conservative', to: 'Tennessee' },
+            { from: 'Conservative', to: 'Alabama' },
+            { from: 'Conservative', to: 'Mississippi' },
+            { from: 'Conservative', to: 'Missouri' },
+            { from: 'Conservative', to: 'Arkansas' },
+            { from: 'Conservative', to: 'Louisiana' },
+            { from: 'Conservative', to: 'North Dakota' },
+            { from: 'Conservative', to: 'South Dakota' },
+            { from: 'Conservative', to: 'Nebraska' },
+            { from: 'Conservative', to: 'Kansas' },
+            { from: 'Conservative', to: 'Oklahoma' },
+            { from: 'Conservative', to: 'Texas' },
+            { from: 'Conservative', to: 'Montana' },
+            { from: 'Conservative', to: 'Wyoming' },
+            { from: 'Conservative', to: 'Idaho' },
+            { from: 'Conservative', to: 'Utah' },
+            { from: 'Conservative', to: 'Alaska' },
+        ];
+
+        // Update popupContent with connection information
+        function updatePopupContent() {
+            nodes.forEach(node => {
+                let connections = edges.filter(edge => edge.from === node.id || edge.to === node.id)
+                    .filter(edge => edge.value) // Only include edges with cost
+                    .map(edge => {
+                        let direction = edge.from === node.id ? `→ ${edge.to}` : `← ${edge.from}`;
+                        if (edges.find(e => e.from === edge.to && e.to === edge.from && e.value)) {
+                            direction = `↔ ${edge.from === node.id ? edge.to : edge.from}`;
+                        }
+                        return `${direction} (Cost: ${edge.value})`;
+                    });
+                if (connections.length > 0) {
+                    node.popupContent += `<br><br><b>Connections:</b><br>${connections.join('<br>')}`;
+                }
+            });
+        }
+
+        updatePopupContent();
+
+        // Create a network
+        var container = document.getElementById('network');
+        var data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+        var options = {
+            physics: { enabled: true },
+            nodes: { font: { size: 14 } },
+            edges: {
+                arrows: { to: { enabled: false } }, // Default: no arrows
+                smooth: { enabled: true },
+                font: { size: 12 } // For edge labels
+            },
+            layout: { improvedLayout: true },
+            interaction: { selectConnectedEdges: false }
+        };
+        var network = new vis.Network(container, data, options);
+
+        // Track open popups
+        var openPopups = {};
+
+        // Handle node click
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.find(n => n.id === nodeId);
+                
+                if (node && node.popupContent) {
+                    // Create popup
+                    var popup = document.createElement('div');
+                    popup.className = 'popup';
+                    popup.innerHTML = node.popupContent + '<span class="close-btn">×</span>';
+                    
+                    // Position popup near the clicked node
+                    var domPosition = network.canvasToDOM(params.pointer.canvas);
+                    popup.style.left = (domPosition.x + 10) + 'px';
+                    popup.style.top = (domPosition.y + 10) + 'px';
+                    
+                    // Add close button functionality
+                    popup.querySelector('.close-btn').addEventListener('click', function() {
+                        popup.remove();
+                        delete openPopups[nodeId];
+                    });
+                    
+                    // Add popup to DOM and track it
+                    document.body.appendChild(popup);
+                    openPopups[nodeId] = popup;
+                }
+            }
+        });
+
+        // Prevent popup from closing when clicking on it
+        document.addEventListener('click', function(event) {
+            if (event.target.className === 'popup' || event.target.closest('.popup')) {
+                event.stopPropagation();
+            }
+        });
+    </script>
+</body>
+</html>
